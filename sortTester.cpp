@@ -19,7 +19,7 @@
 #include "BucketSort.h"
 
 int main() {
-    std::vector<unsigned int> v = {32, 53, 3, 134, 643, 5, 5, 12, 52, 501, 98};
+    std::vector<unsigned int> v = {32, 3, 53, 3, 134, 643, 5, 5, 12, 52, 501, 98};
     BucketSort bs;
     bs.numbersToSort = v;
     const unsigned int numCores = std::thread::hardware_concurrency();

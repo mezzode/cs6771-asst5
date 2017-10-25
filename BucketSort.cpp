@@ -5,8 +5,11 @@
 
 #include <iostream>
 
-unsigned int getDigit(const unsigned int& n, const unsigned int& power) {
-    return static_cast<unsigned int>(n / std::pow(10, power)) % 10;
+int getDigit(const unsigned int& n, const unsigned int& power) {
+    if (n < std::pow(10, power)) {
+        return -1; // no more digits
+    }
+    return static_cast<int>(n / std::pow(10, power)) % 10;
 }
 
 unsigned int getPower(unsigned int n) {
@@ -35,9 +38,15 @@ std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned 
         return v;
     }
     std::vector<std::vector<unsigned int>> buckets(10); // 1 bucket for each digit
+    std::vector<unsigned int> endBucket;
     for (const auto& n : v) {
-        // add number to bucket
-        buckets.at(getDigit(n, getPower(n) - power)).emplace_back(n); // emplace_back?
+        const auto result = getDigit(n, getPower(n) - power);
+        if (result == -1) {
+            endBucket.emplace_back(n);
+        } else {
+            // add number to bucket
+            buckets.at(result).emplace_back(n);
+        }
     }
 
     const unsigned int nextPower = power + 1;
@@ -69,9 +78,9 @@ std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned 
         return std::vector<unsigned int>();
     }
     return std::accumulate(
-        std::next(sortedBuckets.begin()),
+        sortedBuckets.begin(),
         sortedBuckets.end(),
-        sortedBuckets.at(0).get(),
+        endBucket,
         [] (std::vector<unsigned int> a, std::future<std::vector<unsigned int>>& b) {
             auto v = b.get();
             a.insert(a.end(), v.begin(), v.end());
