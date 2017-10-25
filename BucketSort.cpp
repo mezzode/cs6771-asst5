@@ -13,25 +13,18 @@ int getDigit(const unsigned int& n, const unsigned int& power) {
 }
 
 unsigned int getPower(unsigned int n) {
-    std::cout << n << "\n";
     unsigned int i = 0;
     while (n > 9) {
         n /= 10;
         ++i;
     }
-    std::cout << i << "\n";
     return i;
 }
 // is this a good idea?
 // prolly could cache this?
 
 std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned int& power) {
-    // std::cout << power << "\n";
-    // std::cout << v.size() << "\n";
-    // for (auto n : v) {
-    //     std::cout << n << " ";
-    // }
-    // std::cout << "\n";
+    std::cout << power << "\n";
     if (v.empty()) {
         return std::vector<unsigned int>();
     } else if (v.size() == 1) {
@@ -53,14 +46,7 @@ std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned 
     std::vector<std::future<std::vector<unsigned int>>> sortedBuckets;
     // for every bucket, create new thread and do radix sort again
     for (std::vector<unsigned int> bucket : buckets) {
-        for (auto n : bucket) {
-            std::cout << n << " ";
-        }
-        std:: cout << "- " << bucket.size();
-        std::cout << "\n";
         if (bucket.size() > 0) { // no need to sort if 0 or 1 things in bucket
-            // radixSort(bucket, power + 1);
-            std:: cout << "is greater than 1: " << bucket.size();
             sortedBuckets.emplace_back(std::async(
                 std::launch::async,
                 [] (std::vector<unsigned int> bucket, const unsigned int& power) {
@@ -71,8 +57,6 @@ std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned 
             ));
         }
     }
-
-    std::cout << "asd " << sortedBuckets.size() << "\n";
 
     if (sortedBuckets.empty()) {
         return std::vector<unsigned int>();
@@ -101,9 +85,6 @@ void BucketSort::sort(unsigned int numCores) {
     // can parallelise sorting of each bucket
     // each sort would create separate threads for each bucket it spawns?
 
-    for (auto n : numbersToSort) {
-        std::cout << n << " ";
-    }
     numbersToSort = radixSort(numbersToSort, 0);
 
     // to minimise space usage could use iterators to track bucket borders i.e. where to insert elems
