@@ -1,0 +1,35 @@
+{
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/d/projects/cs6771-asst5/sortTester",
+            "args": ["-fThreading"],
+            "stopAtEntry": false,
+            "cwd": "/mnt/d/projects/cs6771-asst4",
+            "environment": [],
+            "externalConsole": true,
+            "windows": {
+                "MIMode": "gdb",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": true
+                    }
+                ]
+            }, 
+            "pipeTransport": {
+                "pipeCwd": "",
+                "pipeProgram": "c:\\windows\\sysnative\\bash.exe",
+                "pipeArgs": ["-c"],
+                "debuggerPath": "/usr/bin/gdb"
+            },
+            "sourceFileMap": {
+                "/mnt/d": "d:\\"
+            }
+        }
+    ]
+}
