@@ -5,40 +5,51 @@
 
 #include <iostream>
 
-// rather than string and needing to convert each time make it an array/vector of digits?
-unsigned int ctoui(char c) {
-    return c - '0';
+int getDigit(const unsigned int& n, const unsigned int& power) {
+    if (n < std::pow(10, power)) {
+        return -1; // no more digits
+    }
+    return static_cast<int>(n / std::pow(10, power)) % 10;
 }
 
-std::vector<std::string> radixSort(std::vector<std::string> v, const unsigned int& power) {
+unsigned int getPower(unsigned int n) {
+    unsigned int i = 0;
+    while (n > 9) {
+        n /= 10;
+        ++i;
+    }
+    return i;
+}
+// is this a good idea?
+// prolly could cache this?
+
+std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned int& power) {
     std::cout << power << "\n";
     if (v.empty()) {
-        return std::vector<std::string>();
+        return std::vector<unsigned int>();
     } else if (v.size() == 1) {
         return v;
     }
-
-    // should change to in place
-    // "buckets" should store indices/iterators pointing to start/end of bucket instead?
-
-    std::vector<std::vector<std::string>> buckets(10); // 1 bucket for each digit
-    std::vector<std::string> endBucket;
+    std::vector<std::vector<unsigned int>> buckets(10); // 1 bucket for each digit
+    std::vector<unsigned int> endBucket;
     for (const auto& n : v) {
-        if (power >= n.size()) {
+        const auto result = getDigit(n, getPower(n) - power);
+        if (result == -1) {
             endBucket.emplace_back(n);
         } else {
-            buckets.at(ctoui(n.at(power))).emplace_back(n);
+            // add number to bucket
+            buckets.at(result).emplace_back(n);
         }
     }
 
     const unsigned int nextPower = power + 1;
-    std::vector<std::future<std::vector<std::string>>> sortedBuckets;
+    std::vector<std::future<std::vector<unsigned int>>> sortedBuckets;
     // for every bucket, create new thread and do radix sort again
-    for (auto bucket : buckets) {
+    for (std::vector<unsigned int> bucket : buckets) {
         if (bucket.size() > 0) { // no need to sort if 0 or 1 things in bucket
             sortedBuckets.emplace_back(std::async(
                 std::launch::async,
-                [] (std::vector<std::string> bucket, const unsigned int& power) {
+                [] (std::vector<unsigned int> bucket, const unsigned int& power) {
                     return radixSort(bucket, power);
                 },
                 bucket,
@@ -48,13 +59,13 @@ std::vector<std::string> radixSort(std::vector<std::string> v, const unsigned in
     }
 
     if (sortedBuckets.empty()) {
-        return std::vector<std::string>();
+        return std::vector<unsigned int>();
     }
     return std::accumulate(
         sortedBuckets.begin(),
         sortedBuckets.end(),
         endBucket,
-        [] (std::vector<std::string> a, std::future<std::vector<std::string>>& b) {
+        [] (std::vector<unsigned int> a, std::future<std::vector<unsigned int>>& b) {
             auto v = b.get();
             a.insert(a.end(), v.begin(), v.end());
             return a;
@@ -73,17 +84,8 @@ void BucketSort::sort(unsigned int numCores) {
     // numbersToSort
     // can parallelise sorting of each bucket
     // each sort would create separate threads for each bucket it spawns?
-    std::vector<std::string> strings{numbersToSort.size()};
-    std::transform(numbersToSort.begin(), numbersToSort.end(), strings.begin(), [] (const unsigned int& n) {
-        return std::to_string(n);
-    });
 
-    strings = radixSort(strings, 0);
-
-    // numbersToSort.clear();
-    std::transform(strings.begin(), strings.end(), numbersToSort.begin(),  [] (const std::string& s) {
-        return std::stoul(s);
-    });
+    numbersToSort = radixSort(numbersToSort, 0);
 
     // to minimise space usage could use iterators to track bucket borders i.e. where to insert elems
     // i.e. rather than a separate data structure, just removing and reinserting into vector
