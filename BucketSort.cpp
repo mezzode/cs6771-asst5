@@ -23,72 +23,51 @@ unsigned int getPower(unsigned int n) {
 // is this a good idea?
 // prolly could cache this?
 
-void BucketSort::radixSort(const unsigned int& start, const unsigned int& end, const unsigned int& power) {
-    if (start == end) {
-        return;
+bool BucketSort::radixSort(const iterator& begin, const iterator& end, const unsigned int& power) {
+    std::cout << power << "\n";
+    if (begin == end) {
+        return true;
     }
     // unordered map vs array vs vector for buckets?
-    std::vector<std::vector<unsigned int>> buckets(10); // 1 bucket for each digit
-    std::vector<unsigned int> endBucket;
+    std::vector<std::vector<unsigned int>> buckets(11); // one bucket for null and one for each digit
 
-    for (auto n = start; n <= end, ++n) {
-        const auto& num = numbersToSort.at(n);
+    for (auto it = begin; it != end; ++it) {
+        const auto& num = *it;
         const auto result = getDigit(num, getPower(num) - power);
-        if (result == -1) {
-            endBucket.emplace_back(num);
-        } else {
-            // add number to bucket
-            buckets.at(result).emplace_back(num);
-        }
-    }
-}
-
-std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned int& power) {
-    std::cout << power << "\n";
-    if (v.empty()) {
-        return std::vector<unsigned int>();
-    } else if (v.size() == 1) {
-        return v;
-    }
-    std::vector<std::vector<unsigned int>> buckets(10); // 1 bucket for each digit
-    std::vector<unsigned int> endBucket;
-    for (const auto& n : v) {
-        const auto result = getDigit(n, getPower(n) - power);
-        if (result == -1) {
-            endBucket.emplace_back(n);
-        } else {
-            // add number to bucket
-            buckets.at(result).emplace_back(n);
-        }
+        buckets.at(result+1).emplace_back(num);
     }
 
     const unsigned int nextPower = power + 1;
-    std::vector<std::future<std::vector<unsigned int>>> sortedBuckets;
-    // for every bucket, create new thread and do radix sort again
-    for (std::vector<unsigned int> bucket : buckets) {
-        if (bucket.size() > 0) { // no need to sort if 0 or 1 things in bucket
-            sortedBuckets.emplace_back(std::async(
-                std::launch::async,
-                [] (std::vector<unsigned int> bucket, const unsigned int& power) {
-                    return radixSort(bucket, power);
-                },
-                bucket,
-                nextPower
-            ));
+    auto it = begin;
+    std::vector<std::future<bool>> sortedBuckets;
+    for (auto bucket : buckets) {
+        if (bucket.size() == 0) {
+            continue; // skip empty buckets
         }
+
+        const auto bucketBegin = it;
+        it = std::copy(bucket.begin(), bucket.end(), it);
+        const auto bucketEnd = it;
+
+        if (bucket.size() == 1) {
+            continue; // no need to sort
+        }
+        sortedBuckets.emplace_back(std::async(
+            std::launch::async,
+            [this] (const iterator& begin, const iterator& end, const unsigned int& power) {
+                return radixSort(begin, end, power);
+            },
+            bucketBegin,
+            bucketEnd,
+            nextPower
+        ));
     }
 
-    if (sortedBuckets.empty()) {
-        return std::vector<unsigned int>();
-    }
-    return std::accumulate(
+    return std::all_of(
         sortedBuckets.begin(),
         sortedBuckets.end(),
-        endBucket,
-        [] (std::vector<unsigned int> a, std::future<std::vector<unsigned int>>& b) {
-            auto v = b.get();
-            a.insert(a.end(), v.begin(), v.end());
-            return a;
+        [] (std::future<bool>& success) {
+            return success.get();
         }
     );
     // wait until all spawned threads return, then append results (tho if done in place do nothing)
@@ -105,7 +84,7 @@ void BucketSort::sort(unsigned int numCores) {
     // can parallelise sorting of each bucket
     // each sort would create separate threads for each bucket it spawns?
 
-    numbersToSort = radixSort(numbersToSort, 0);
+    radixSort(numbersToSort.begin(), numbersToSort.end(), 0);
 
     // to minimise space usage could use iterators to track bucket borders i.e. where to insert elems
     // i.e. rather than a separate data structure, just removing and reinserting into vector
