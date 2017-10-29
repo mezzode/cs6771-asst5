@@ -58,8 +58,21 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
         if (bucket.size() == 1) {
             continue; // no need to sort
         }
+
+        // std::unique_lock<std::mutex> guard{threadCountLock};
+        // availableThread.wait(guard, [] {
+        //     return threadCount < numCores;
+        // });
+        // ++threadCount;
+
+        // only spawn new thread if available
+        auto policy = std::launch::deferred;
+        if (threadCount < numCores_) {
+            policy = std::launch::async;
+            ++threadCount;
+        }
         sortedBuckets.emplace_back(std::async(
-            // std::launch::async,
+            policy,
             [this] (const iterator& begin, const iterator& end, const unsigned int& power) {
                 return radixSort(begin, end, power);
             },
@@ -95,6 +108,7 @@ void BucketSort::sort(unsigned int numCores) {
     // numbersToSort
     // can parallelise sorting of each bucket
     // each sort would create separate threads for each bucket it spawns?
+    numCores_ = numCores;
 
     radixSort(numbersToSort.begin(), numbersToSort.end(), 0);
 
