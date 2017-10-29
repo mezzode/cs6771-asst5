@@ -67,9 +67,12 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
 
         // only spawn new thread if available
         auto policy = std::launch::deferred;
-        if (threadCount < numCores_) {
-            policy = std::launch::async;
-            ++threadCount;
+        {
+            std::lock_guard<std::mutex> lg{threadCountLock};
+            if (threadCount < numCores_) {
+                policy = std::launch::async;
+                ++threadCount;
+            }
         }
         sortedBuckets.emplace_back(std::async(
             policy,

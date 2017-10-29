@@ -2,13 +2,14 @@
 #define BUCKET_SORT_H
 
 #include <vector>
-#include <atomic>
+#include <mutex>
 
 struct BucketSort {
     // vector of numbers
     std::vector<unsigned int> numbersToSort;
 
-    std::atomic<unsigned int> threadCount{1};
+    std::mutex threadCountLock;
+    unsigned int threadCount{1};
     unsigned int numCores_;
 
     using iterator = decltype(numbersToSort.begin());
