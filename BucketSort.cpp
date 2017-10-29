@@ -23,6 +23,26 @@ unsigned int getPower(unsigned int n) {
 // is this a good idea?
 // prolly could cache this?
 
+void BucketSort::radixSort(const unsigned int& start, const unsigned int& end, const unsigned int& power) {
+    if (start == end) {
+        return;
+    }
+    // unordered map vs array vs vector for buckets?
+    std::vector<std::vector<unsigned int>> buckets(10); // 1 bucket for each digit
+    std::vector<unsigned int> endBucket;
+
+    for (auto n = start; n <= end, ++n) {
+        const auto& num = numbersToSort.at(n);
+        const auto result = getDigit(num, getPower(num) - power);
+        if (result == -1) {
+            endBucket.emplace_back(num);
+        } else {
+            // add number to bucket
+            buckets.at(result).emplace_back(num);
+        }
+    }
+}
+
 std::vector<unsigned int> radixSort(std::vector<unsigned int> v, const unsigned int& power) {
     std::cout << power << "\n";
     if (v.empty()) {
