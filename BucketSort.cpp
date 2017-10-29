@@ -17,14 +17,11 @@ unsigned int getPower(unsigned int n) {
     }
     return i;
 }
-// is this a good idea?
-// prolly could cache this?
 
-bool BucketSort::radixSort(const iterator& begin, const iterator& end, const unsigned int& power) {
+void BucketSort::radixSort(const iterator& begin, const iterator& end, const unsigned int& power) {
     if (begin == end) {
-        return true;
+        return;
     }
-    // unordered map vs array vs vector for buckets?
     std::vector<unsigned int> finishedBucket; // bucket for elements which cannot be further done
     std::vector<std::vector<unsigned int>> buckets(10); // one for each digit
 
@@ -35,17 +32,13 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
             finishedBucket.emplace_back(num);
         } else {
             const auto result = getDigit(num, getPower(num) - power);
-            try {
-                buckets.at(result).emplace_back(num);
-            } catch (std::out_of_range) {
-                std::cout << "moo\n";
-            }
+            buckets.at(result).emplace_back(num);
         }
     }
 
     const unsigned int nextPower = power + 1;
     auto it = std::copy(finishedBucket.begin(), finishedBucket.end(), begin);
-    std::vector<std::future<bool>> sortedBuckets;
+    std::vector<std::future<void>> sortedBuckets;
     for (auto bucket : buckets) {
         if (bucket.size() == 0) {
             continue; // skip empty buckets
@@ -58,12 +51,6 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
         if (bucket.size() == 1) {
             continue; // no need to sort
         }
-
-        // std::unique_lock<std::mutex> guard{threadCountLock};
-        // availableThread.wait(guard, [] {
-        //     return threadCount < numCores;
-        // });
-        // ++threadCount;
 
         // only spawn new thread if available
         auto policy = std::launch::deferred;
@@ -85,45 +72,12 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
         ));
     }
 
-    for (std::future<bool>& b : sortedBuckets) {
-        // std::cout << "blah\n";
+    for (std::future<void>& b : sortedBuckets) {
         b.get();
     }
-    return true;
-
-    // return std::all_of(
-    //     sortedBuckets.begin(),
-    //     sortedBuckets.end(),
-    //     [] (std::future<bool>& success) {
-    //         return success.get();
-    //     }
-    // );
-    // wait until all spawned threads return, then append results (tho if done in place do nothing)
-    // return appended buckets
 }
-
-// theres an issue if duplicates where infinite looping since bucket always has more than 1 thing in it
-// deal with what happens if power becomes larger than number of digits?
 
 void BucketSort::sort(unsigned int numCores) {
-    // radix sort
-    // bucket by digit and recursively do same for each bucket and append sorted buckets
-    // numbersToSort
-    // can parallelise sorting of each bucket
-    // each sort would create separate threads for each bucket it spawns?
     numCores_ = numCores;
-
     radixSort(numbersToSort.begin(), numbersToSort.end(), 0);
-
-    // to minimise space usage could use iterators to track bucket borders i.e. where to insert elems
-    // i.e. rather than a separate data structure, just removing and reinserting into vector
-    // so have map of digits to iterators so given the digit, know where to insert the thingo
-    // if doing this way, would define radix sort using begin and end iterators which would indicate 
-    // the start and end of the bucket
-    // although may need to be careful of iterator invalidation...
-    // should be fine if only using iterators inside the bucket?
-    // but what about end? since would be part of a different bucket so may be changed during since different thread?
-    // one way to do this is to have it be last iterator in bucket instead i.e. --end
 }
-// in place sort?
-// start and end iterators and recursive lock? or just copy section of vector?
