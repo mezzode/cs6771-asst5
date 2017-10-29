@@ -47,7 +47,7 @@ int main() {
         b.sort(numCores); // ensure the cache is fair for each test
 
         // potentially could do i *= 2, not ++i
-        for (auto currentCores = 1U; currentCores <= numCores; ++currentCores) {
+        for (auto currentCores = numCores; currentCores <= numCores; ++currentCores) {
             std::cout << "Testing " << desc << " with " << currentCores << " core(s)" << std::endl;
             results << desc << ',' << currentCores;
             for (auto i = 0U; i < numreps; ++i) {
