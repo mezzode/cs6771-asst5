@@ -5,41 +5,21 @@
 
 #include <iostream>
 
-unsigned int getDigit(const unsigned int& n, const unsigned int& power) {
-    return static_cast<unsigned int>(n / std::pow(10, power)) % 10;
-}
-
-unsigned int getPower(unsigned int n) {
-    unsigned int i = 0;
-    while (n > 9) {
-        n /= 10;
-        ++i;
-    }
-    return i;
-}
-// is this a good idea?
-// prolly could cache this?
-
 bool BucketSort::radixSort(const iterator& begin, const iterator& end, const unsigned int& power) {
     if (begin == end) {
         return true;
     }
     // unordered map vs array vs vector for buckets?
-    std::vector<unsigned int> finishedBucket; // bucket for elements which cannot be further done
-    std::vector<std::vector<unsigned int>> buckets(10); // one for each digit
+    std::vector<std::vector<unsigned int>> finishedBucket; // bucket for elements which cannot be further done
+    std::vector<std::vector<std::vector<unsigned int>>> buckets(10); // one for each digit
 
     for (auto it = begin; it != end; ++it) {
-        const auto& num = *it;
-        if (num < std::pow(10, power)) {
+        const auto& numVec = *it;
+        if (numVec.size() < power + 1) {
             // no more digits
-            finishedBucket.emplace_back(num);
+            finishedBucket.emplace_back(numVec);
         } else {
-            const auto result = getDigit(num, getPower(num) - power);
-            try {
-                buckets.at(result).emplace_back(num);
-            } catch (std::out_of_range) {
-                std::cout << "moo\n";
-            }
+            buckets.at(numVec.at(power)).emplace_back(numVec);
         }
     }
 
@@ -86,9 +66,6 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
     // return appended buckets
 }
 
-// theres an issue if duplicates where infinite looping since bucket always has more than 1 thing in it
-// deal with what happens if power becomes larger than number of digits?
-
 void BucketSort::sort(unsigned int numCores) {
     // radix sort
     // bucket by digit and recursively do same for each bucket and append sorted buckets
@@ -96,7 +73,28 @@ void BucketSort::sort(unsigned int numCores) {
     // can parallelise sorting of each bucket
     // each sort would create separate threads for each bucket it spawns?
 
-    radixSort(numbersToSort.begin(), numbersToSort.end(), 0);
+    // convert to vectors to easily access each digit
+    std::vector<std::vector<unsigned int>> vectorsToSort(numbersToSort.size());
+    std::transform(numbersToSort.begin(), numbersToSort.end(), vectorsToSort.begin(), [] (unsigned int n) {
+        std::vector<unsigned int> v;
+        while (n > 0) {
+            v.push_back(n % 10);
+            n /= 10;
+        }
+        std::reverse(v.begin(), v.end());
+        return v;
+    });
+
+    radixSort(vectorsToSort.begin(), vectorsToSort.end(), 0);
+
+    // convert from vector back to unsigned int
+    std::transform(vectorsToSort.begin(), vectorsToSort.end(), numbersToSort.begin(), [] (std::vector<unsigned int> v) {
+        unsigned int n = 0;
+        for (unsigned int i = 0; i < v.size(); ++i) {
+            n += v.at(i) * std::pow(10, v.size() - i - 1);
+        }
+        return n;
+    });
 
     // to minimise space usage could use iterators to track bucket borders i.e. where to insert elems
     // i.e. rather than a separate data structure, just removing and reinserting into vector

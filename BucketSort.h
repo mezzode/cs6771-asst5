@@ -7,7 +7,9 @@ struct BucketSort {
     // vector of numbers
     std::vector<unsigned int> numbersToSort;
 
-    using iterator = decltype(numbersToSort.begin());
+    using iterator = typename std::vector<std::vector<unsigned int>>::iterator;
+
+    // std::atomic<int> threads = 0;
 
     void sort(unsigned int numCores);
 
