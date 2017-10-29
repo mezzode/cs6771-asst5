@@ -24,21 +24,25 @@ unsigned int getPower(unsigned int n) {
 // prolly could cache this?
 
 bool BucketSort::radixSort(const iterator& begin, const iterator& end, const unsigned int& power) {
-    std::cout << power << "\n";
     if (begin == end) {
         return true;
     }
     // unordered map vs array vs vector for buckets?
-    std::vector<std::vector<unsigned int>> buckets(11); // one bucket for null and one for each digit
+    std::vector<unsigned int> finishedBucket; // bucket for elements which cannot be further done
+    std::vector<std::vector<unsigned int>> buckets(10); // one for each digit
 
     for (auto it = begin; it != end; ++it) {
         const auto& num = *it;
         const auto result = getDigit(num, getPower(num) - power);
-        buckets.at(result+1).emplace_back(num);
+        if (result == -1) {
+            finishedBucket.emplace_back(num);
+        } else {
+            buckets.at(result).emplace_back(num);
+        }
     }
 
     const unsigned int nextPower = power + 1;
-    auto it = begin;
+    auto it = std::copy(finishedBucket.begin(), finishedBucket.end(), begin);
     std::vector<std::future<bool>> sortedBuckets;
     for (auto bucket : buckets) {
         if (bucket.size() == 0) {
