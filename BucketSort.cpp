@@ -5,11 +5,8 @@
 
 #include <iostream>
 
-int getDigit(const unsigned int& n, const unsigned int& power) {
-    if (n < std::pow(10, power)) {
-        return -1; // no more digits
-    }
-    return static_cast<int>(n / std::pow(10, power)) % 10;
+unsigned int getDigit(const unsigned int& n, const unsigned int& power) {
+    return static_cast<unsigned int>(n / std::pow(10, power)) % 10;
 }
 
 unsigned int getPower(unsigned int n) {
@@ -33,11 +30,16 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
 
     for (auto it = begin; it != end; ++it) {
         const auto& num = *it;
-        const auto result = getDigit(num, getPower(num) - power);
-        if (result == -1) {
+        if (num < std::pow(10, power)) {
+            // no more digits
             finishedBucket.emplace_back(num);
         } else {
-            buckets.at(result).emplace_back(num);
+            const auto result = getDigit(num, getPower(num) - power);
+            try {
+                buckets.at(result).emplace_back(num);
+            } catch (std::out_of_range) {
+                std::cout << "moo\n";
+            }
         }
     }
 
@@ -57,7 +59,7 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
             continue; // no need to sort
         }
         sortedBuckets.emplace_back(std::async(
-            std::launch::async,
+            // std::launch::async,
             [this] (const iterator& begin, const iterator& end, const unsigned int& power) {
                 return radixSort(begin, end, power);
             },
@@ -67,13 +69,19 @@ bool BucketSort::radixSort(const iterator& begin, const iterator& end, const uns
         ));
     }
 
-    return std::all_of(
-        sortedBuckets.begin(),
-        sortedBuckets.end(),
-        [] (std::future<bool>& success) {
-            return success.get();
-        }
-    );
+    for (std::future<bool>& b : sortedBuckets) {
+        // std::cout << "blah\n";
+        b.get();
+    }
+    return true;
+
+    // return std::all_of(
+    //     sortedBuckets.begin(),
+    //     sortedBuckets.end(),
+    //     [] (std::future<bool>& success) {
+    //         return success.get();
+    //     }
+    // );
     // wait until all spawned threads return, then append results (tho if done in place do nothing)
     // return appended buckets
 }
